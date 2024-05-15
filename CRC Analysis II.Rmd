@@ -1,0 +1,795 @@
+---
+title: "Biostat II"
+author: "Eman AlBahrani"
+date: "2024-03-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Biostat Assingment II
+
+This dataset (AssignII_SS24.txt) consists of a group of colorectal cancer patients, who each have had surgery to remove their tumours. The clinical dataset consists of the following variables:
+Age at Diagnosis (Years)
+Dukes Stage: A to D (development/progression of disease)
+Gender: Male or Female
+Location: Left, Right, Colon or Rectum
+DFS: Disease-free survival, months (survival without the disease returning)
+DFSevent: 0 or 1 (with 1 = event)
+AdjRadio: If the patient also received radiotherapy
+AdjChem: If the patient also received chemotherapy
+
+You have also been provided with a dataset (AssignIIGE_SS24.txt) comprising gene expression levels for the same set of patients. This data has been pre-processed and log2 transformed. You need not make any further transformations to the data.
+
+
+# Load data
+
+```{r}
+
+# Read first file into a data frame
+crc_patients <- read.table("AssignII_SS24.txt", header = TRUE)
+
+# Read second file into a data frame
+gene_exp <- read.table("AssignIIGE_SS24.txt", header = TRUE)
+
+# Print the data frames
+print(crc_patients)
+print(gene_exp)
+
+
+```
+
+
+#Question 1: 
+a)	Selecting genes based on the interquartile range (IQR) of their expression levels. How many genes have an IQR of greater than:
+i.	2.5
+ii.	2.0
+iii.	1.5
+iv.	1.25
+v.	1.0
+vi.	0.75
+
+
+```{r}
+
+library(genefilter)
+
+#0.75
+f0.75 <-function(x) IQR(x) >0.75
+filtered_genes0.75 <- genefilter(gene_exp, f0.75)
+sel0.75<-gene_exp[filtered_genes0.75,]
+nrow(sel0.75)
+
+#1.00
+f1.00 <-function(x) IQR(x) >1.00
+filtered_genes1.00 <- genefilter(gene_exp, f1.00)
+sel1.00<-gene_exp[filtered_genes1.00,]
+nrow(sel1.00)
+
+
+#1.25
+f1.25 <-function(x) IQR(x) >1.25
+filtered_genes1.25 <- genefilter(gene_exp, f1.25)
+sel1.25<-gene_exp[filtered_genes1.25,]
+nrow(sel1.25)
+
+
+#1.50
+f1.50 <-function(x) IQR(x) >1.50
+filtered_genes1.50 <- genefilter(gene_exp, f1.50)
+sel1.50<-gene_exp[filtered_genes1.50,]
+nrow(sel1.50)
+
+
+#2.00
+f2.0 <-function(x) IQR(x) >2.0
+filtered_genes2.0 <- genefilter(gene_exp, f2.0)
+sel2.0<-gene_exp[filtered_genes2.0,]
+nrow(sel2.0)
+
+
+
+#2.50
+f2.50 <-function(x) IQR(x) >2.50
+filtered_genes2.50 <- genefilter(gene_exp, f2.50)
+sel2.50<-gene_exp[filtered_genes2.50,]
+nrow(sel2.50)
+
+```
+
+
+
+
+b)	Using the genes with an IQR of 0.75 and above, perform hierarchical clustering using the distance/linkage combination Euclidean/ward.D2.
+
+```{r}
+
+# Select genes with an IQR of 0.75 and above
+selected_genes <- sel0.75
+
+# Perform hierarchical clustering
+distance_matrix <- dist(t(sel0.75), method = "euclidean")
+hierarchical_clusters <- hclust(distance_matrix, method = "ward.D2")
+
+distance_matrix
+hierarchical_clusters
+```
+c)	Plot the resultant dendrogram, showing on the plot how the dataset can be divided into two clusters.
+
+```{r}
+# Plot the dendrogram
+plot(hierarchical_clusters, main = "Hierarchical Clustering Dendrogram",
+     xlab = "Patients", ylab = "Distance", sub = NULL, cex=0.65)
+
+# Add rectangles to indicate division into two clusters
+rect.hclust(hierarchical_clusters, k = 2, border = 2)
+
+```
+
+
+# Question 2
+a)	Considering the non-survival (i.e. DFS and DFSevents) variables, are there any relationships with the two clusters identified in 1c)? Summarise your results, including tables and/or figures where appropriate.
+
+
+```{r}
+
+ 
+## Location: Chi-square or Fisher's exact test.
+print("Location")
+# contingency table to check assumption
+
+cont_location <- table(cluster_assignments, crc_patients$Location)
+cont_location
+#Chi square
+chi_loc_result <- chisq.test(cont_location)
+print(chi_loc_result)
+
+
+# Calculate the percentage of each location within each cluster
+# Filter data for cluster one only
+cluster_one <- crc_patients$Location[cluster_assignments == 1]
+
+# Calculate the percentage of each location within cluster one
+percentage_cluster_one <- table(cluster_one) / length(cluster_one) * 100
+
+# Print the percentage of patients in cluster one for each location
+print("Percentage of patients in cluster one with each location:")
+print(percentage_cluster_one)
+
+```
+
+
+```{r}
+
+
+## Dukestage: Chi-square or Fisher's exact test.
+print("Dukes Stage")
+# contingency table to check assumption
+
+cont_dukes <- table(cluster_assignments, crc_patients$DukesStage)
+cont_dukes
+#Chi square
+chi_dukes_result <- chisq.test(cont_dukes)
+print(chi_dukes_result)
+
+
+# Calculate and print the percentage of each stage within each cluster
+
+cluster_one_duke <- crc_patients$DukesStage[cluster_assignments == 1]
+percentage_cluster_one_duke <- table(cluster_one_duke) / length(cluster_one_duke) * 100
+print("Percentage of patients in cluster one with each duke stage:")
+print(percentage_cluster_one_duke)
+
+#cluster two
+cluster_2_duke <- crc_patients$DukesStage[cluster_assignments == 2]
+percentage_cluster_2_duke <- table(cluster_2_duke) / length(cluster_2_duke) * 100
+print("Percentage of patients in cluster one with each duke stage:")
+print(percentage_cluster_2_duke)
+```
+
+
+```{R}
+## Age: t-test or Mann-Whitney U test.
+
+
+# boxplot
+library("ggplot2")
+## Check the distribution of the data
+pastel_colors2 <- c("#FFB6C1","#B0E0E6")  
+
+# Boxplot for DFS by cluster assignments
+ggplot(crc_patients, aes(x = as.factor(cluster_assignments), y = crc_patients$AgeDiagnosis)) +
+  geom_boxplot(fill = pastel_colors2) +
+  labs(title = "Box Plot of Age at Diagnosis by Cluster Assignments",
+       x = "Cluster Assignments",
+       y = "Age at Diagnosis") +
+  theme_minimal()
+
+# run shapiro wilk test for normality - age at diagnosis
+shapiro.test(crc_patients$AgeDiagnosis)
+
+# MW
+wilcox_age <- wilcox.test(crc_patients$AgeDiagnosis ~ cluster_assignments)
+
+# Print the result
+print(wilcox_age)
+
+# Convert cluster_assignments to a dataframe
+cluster_assignments_df <- data.frame(cluster = cluster_assignments)
+
+# Calculate median age for Cluster 1
+median_age_cluster1 <- median(crc_patients$AgeDiagnosis[cluster_assignments_df$cluster == "1"], na.rm = TRUE)
+
+# Calculate median age for Cluster 2
+median_age_cluster2 <- median(crc_patients$AgeDiagnosis[cluster_assignments_df$cluster == "2"], na.rm = TRUE)
+
+# Print the results
+print(paste("Median age for Cluster 1:", median_age_cluster1))
+print(paste("Median age for Cluster 2:", median_age_cluster2))
+```
+
+
+```{r}
+
+## Gender: Chi-square or Fisher's exact test.
+print("Gender")
+# contingency table to check assumption
+
+cont_gender<- table(cluster_assignments, crc_patients$Gender)
+cont_gender
+#Chi square
+chi_gender_result <- chisq.test(cont_gender)
+print(chi_gender_result)
+
+# Calculate and print the percentage of each stage within each cluster
+cluster_one_gender <- crc_patients$Gender[cluster_assignments == 1]
+percentage_cluster_one_gender <- table(cluster_one_gender) / length(cluster_one_gender) * 100
+print("Percentage of patients in cluster one with each Gender:")
+print(percentage_cluster_one_gender)
+
+
+cluster_2_gender <- crc_patients$Gender[cluster_assignments == 2]
+percentage_cluster_2_gender <- table(cluster_2_gender) / length(cluster_2_gender) * 100
+print("Percentage of patients in cluster 2 with each Gender:")
+print(percentage_cluster_2_gender)
+
+```
+
+
+```{r}
+
+## Adj Radio: t-test or Mann-Whitney U test.
+print("Adj radio")
+# contingency table to check assumption
+
+cont_radio<- table(cluster_assignments, crc_patients$AdjRadio)
+cont_radio
+#Chi square
+chi_radio_result <- chisq.test(cont_radio)
+print(chi_radio_result)
+
+
+# Calculate and print the percentage of each radiotherapy group within each cluster
+percentage_radio <- prop.table(cont_radio, margin = 2) * 100  
+print("Percentage of each radiotherapy group within each cluster:")
+print(percentage_radio)
+
+
+# Calculate and print the percentage of each stage within each cluster
+cluster_one_radio <- crc_patients$AdjRadio[cluster_assignments == 1]
+percentage_cluster_one_radio <- table(cluster_one_radio) / length(cluster_one_radio) * 100
+print("Percentage of patients in cluster one with each adj radio:")
+print(percentage_cluster_one_radio)
+
+#cluster 2
+cluster_2_radio <- crc_patients$AdjRadio[cluster_assignments == 2]
+percentage_cluster_2_radio <- table(cluster_2_radio) / length(cluster_2_radio) * 100
+print("Percentage of patients in cluster one with each adj radio:")
+print(percentage_cluster_2_radio)
+
+
+```
+
+
+```{r}
+
+## Adj Chem: t-test or Mann-Whitney U test.
+print("Adj chem")
+# contingency table to check assumption
+
+cont_chem<- table(cluster_assignments, crc_patients$AdjChem)
+cont_chem
+#Chi square
+chi_chem_result <- chisq.test(cont_chem)
+print(chi_chem_result)
+
+# Calculate and print the percentage of each stage within each cluster
+cluster_one_chem <- crc_patients$AdjChem[cluster_assignments == 1]
+percentage_cluster_one_chem <- table(cluster_one_chem) / length(cluster_one_chem) * 100
+print("Percentage of patients in cluster one with each adj chem:")
+print(percentage_cluster_one_chem)
+
+# Calculate and print the percentage of each stage within each cluster
+cluster_2_chem <- crc_patients$AdjChem[cluster_assignments == 2]
+percentage_cluster_2_chem <- table(cluster_2_chem) / length(cluster_2_chem) * 100
+print("Percentage of patients in cluster one with each adj chem:")
+print(percentage_cluster_2_chem)
+
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+
+#Question 3
+Plot the survival curves corresponding to both clusters, as identified in 1c). Summarise/explain your results.
+
+```{r}
+# Load necessary libraries
+library(survival)
+library(survminer)
+
+```
+
+```{r}
+
+# Fit Kaplan-Meier survival curves for each cluster
+cluster_assignments <- cutree(hierarchical_clusters, k = 2)
+
+fit<-survfit(Surv(DFS, DFSEvent)~cluster_assignments, data=crc_patients)
+
+
+# Plot the survival curves
+ggsurvplot(fit,pval=T, conf.int = TRUE, 
+           risk.table = T, risk.table.col = "strata",
+           linetype= "strata",
+           surv.median.line = "hv",
+           ggtheme = theme_bw())
+```
+
+
+#Question 4
+a)	Perform a univariate analysis for each variable in the clinical dataset with respect to disease-free survival. 
+
+```{r}
+# Univariate analysis of each clinical variable and plot
+#Location
+loc.coxph <- coxph(Surv(DFS, DFSEvent) ~ Location, method = "efron", data = crc_patients)
+loc_summary <- summary(loc.coxph)
+loc_summary
+loc_coxph<- cox.zph(loc.coxph, transform = "log")
+loc_coxph
+plot(loc_coxph[1,], main = "Location")
+
+# DukesStage
+duke.coxph <- coxph(Surv(DFS, DFSEvent) ~ DukesStage, method = "efron", data = crc_patients)
+duke_summary <- summary(duke.coxph)
+duke_summary
+duke_coxph <- cox.zph(duke.coxph, transform = "log")
+duke_coxph
+plot(duke_coxph[1,], main ="Dukes Stage")
+
+# Age at Diagnosis
+age.coxph <- coxph(Surv(DFS, DFSEvent) ~ AgeDiagnosis, method = "efron", data = crc_patients)
+age_summary <- summary(age.coxph)
+age_summary
+age_coxph <- cox.zph(age.coxph, transform = "log")
+age_coxph
+plot(age_coxph[1,], main ="Age at Diagnosis")
+
+# Gender
+gender.coxph <- coxph(Surv(DFS, DFSEvent) ~ Gender, method = "efron", data = crc_patients)
+gender_summary <- summary(gender.coxph)
+gender_summary
+gender_coxph <- cox.zph(gender.coxph, transform = "log")
+gender_coxph
+plot(gender_coxph[1,], main = "Gender")
+
+
+# Adjuvant Radiotherapy (AdjRadio)
+radio.coxph <- coxph(Surv(DFS, DFSEvent) ~ AdjRadio, method = "efron", data = crc_patients)
+radio_summary <- summary(radio.coxph)
+radio_summary
+radio_coxph <- cox.zph(radio.coxph, transform = "log")
+radio_coxph
+plot(radio_coxph[1,], main = "Adjuvant Radiotherapy")
+
+# Adjuvant Chemotherapy (AdjChem)
+chem.coxph <- coxph(Surv(DFS, DFSEvent) ~ AdjChem, method = "efron", data = crc_patients)
+chem_summary <- summary(chem.coxph)
+chem_summary
+chem_coxph <- cox.zph(chem.coxph, transform = "log")
+chem_coxph
+plot(chem_coxph[1,], main = "Adjuvant Chemotherapy")
+
+```
+
+Also, perform a univariate analysis for the cluster variable, identified in 1c). (You do not need to check for linearity with respect to continuous variables). Summarise/explain your results, including table/s.
+
+
+```{r}
+ #cluster
+cluster.coxph <- coxph(Surv(DFS, DFSEvent) ~ cluster_assignments, method = "efron", data = crc_patients)
+cluster_summary <- summary(cluster.coxph)
+cluster_summary
+cluster_coxph<- cox.zph(cluster.coxph, transform = "log")
+cluster_coxph
+plot(cluster_coxph[1,])
+
+```
+
+
+b)	Given the results in 4a) what is the power of each univariate test? (assume a significance threshold of 0.05)
+
+
+```{r}
+
+#location
+loc.coxph
+
+#duke stage
+duke.coxph
+
+# Age at Diagnosis
+age.coxph 
+# Gender
+gender.coxph 
+
+# Adjuvant Radiotherapy (AdjRadio)
+radio.coxph 
+
+# Adjuvant Chemotherapy (AdjChem)
+chem.coxph 
+
+
+# cluster
+cluster.coxph
+```
+location HR = left 0.7023, rectum 0.6321, right 0.7610
+
+  n= 286, number of events= 212 
+   (4 observations deleted due to missingness)
+
+   
+duke stage HR = b (1.5607), c(1.1708), d(1.3056)
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+   
+
+age 1.013852
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+
+genderm 0.8848
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+
+
+adj radio 0.5549
+     n= 285, number of events= 212 
+   (5 observations deleted due to missingness)
+   
+
+adj chem 0.91815
+     n= 285, number of events= 212 
+   (5 observations deleted due to missingness)
+   
+   
+cluster 0.6986
+  n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+   
+   
+```{r}
+
+## location
+print("Location:")
+table(crc_patients$Location)
+print("unknown:")
+sum(is.na(crc_patients$Location))
+
+# Count occurrences of each combination of Location and DFSevent values
+event_counts_loc <- table(crc_patients$Location, crc_patients$DFSEvent)
+
+# Print the counts
+print(event_counts_loc)
+
+
+#DukesStage
+print("DukesStage")
+table(crc_patients$DukesStage)
+print("unknown:")
+sum(is.na(crc_patients$DukesStage))
+
+
+# check events
+event_counts_duke <- table(crc_patients$DukesStage, crc_patients$DFSEvent)
+print(event_counts_duke)
+
+
+#Age
+print("Mean age at diagnosis is ")
+mean(crc_patients$AgeDiagnosis)
+print("Age at diagnosis SD is ")
+sd(crc_patients$AgeDiagnosis)
+print("unknown:")
+sum(is.na(crc_patients$AgeDiagnosis))
+
+# check events
+event_counts_age <- table(crc_patients$AgeDiagnosis, crc_patients$DFSEvent)
+#print(event_counts_age)
+
+#Gender
+print("Gender:")
+table(crc_patients$Gender)
+print("unknown:")
+sum(is.na(crc_patients$Gender))
+
+# check events
+event_counts_gender <- table(crc_patients$Gender, crc_patients$DFSEvent)
+print(event_counts_gender)
+
+#AdjRadio
+print("AdjRadio where N = no and Y = yes:")
+table(crc_patients$AdjRadio)
+print("unknown:")
+sum(is.na(crc_patients$AdjRadio))
+
+# check events
+event_counts_radio <- table(crc_patients$AdjRadio, crc_patients$DFSEvent)
+print(event_counts_radio)
+
+#AdjChem
+print("AdjChem where N = no and Y = yes:")
+table(crc_patients$AdjChem)
+print("unknown:")
+sum(is.na(crc_patients$AdjChem))
+
+# check events
+event_counts_chem <- table(crc_patients$AdjChem, crc_patients$DFSEvent)
+print(event_counts_chem)
+
+```
+location HR = left 0.7023, rectum 0.6321, right 0.7610
+
+  n= 286, number of events= 212 
+   (4 observations deleted due to missingness)
+
+   
+duke stage HR = b (1.5607), c(1.1708), d(1.3056)
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+   
+
+age 1.013852
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+
+genderm 0.8848
+     n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+
+
+adj radio 0.5549
+     n= 285, number of events= 212 
+   (5 observations deleted due to missingness)
+   
+
+adj chem 0.91815
+     n= 285, number of events= 212 
+   (5 observations deleted due to missingness)
+   
+   
+cluster 0.6986
+  n= 287, number of events= 213 
+   (3 observations deleted due to missingness)
+
+
+
+```{r}
+
+# check cluster counts
+cluster_counts <- table(cluster_assignments)
+print(cluster_counts)
+
+# check event counts in cluster
+event_counts_cluster <- table(cluster_assignments, crc_patients$DFSEvent)
+print(event_counts_cluster)
+```
+
+
+```{r}
+install.packages("powerSurvEpi")
+library(powerSurvEpi)
+```
+
+```{r}
+
+# location
+print("left WRT colon")
+powerCT.default0(k = 122/3,m = 88+2,RR = 0.7023, alpha = 0.05)
+
+print("rectum WRT colon")
+powerCT.default0(k = 39/3,m = 28+2,RR = 0.6321, alpha = 0.05)
+
+print("right WRT colon")
+powerCT.default0(k = 125/3,m = 94+2,RR = 0.7610, alpha = 0.05)
+
+
+
+#duke stage HR = b (1.5607), c(1.1708), d(1.3056)
+
+# b with respect to a
+print("b WRT A")
+powerCT.default0(k = 94/44,m = 80+39,RR = 1.5607, alpha = 0.05)
+
+# c with respect to a
+print("C WRT A")
+powerCT.default0(k = 91/44,m = 57+39,RR = 1.1708, alpha = 0.05)
+
+# d with respect to a
+print ("D WRT A")
+powerCT.default0(k = 61/44,m = 37+39,RR = 1.3056, alpha = 0.05)
+
+
+#age 1.013852
+print("Age")
+powerCT.default0(k = 1,m = 213,RR = 1.013852, alpha = 0.05)
+
+
+#genderm 0.8848
+#male wrt female
+print("M WRT F")
+powerCT.default0(k = 164/126,m = 117+96,RR = 0.8848, alpha = 0.05)
+
+
+#adj radio 0.5549
+# Y wrt n
+print("Radio Y WRT N")
+powerCT.default0(k = 26/262,m = 11+201,RR = 0.5549, alpha = 0.05)
+
+
+#adj chem 0.91815
+# Y wrt n
+print("Chem Y WRT N")
+powerCT.default0(k = 116/172,m = 80+132,RR = 0.91815, alpha = 0.05)
+
+#cluster 0.6986
+# 2 WRT 1
+
+print("Cluster 2 WRT 1")
+powerCT.default0(k = 90/200,m = 66+147,RR = 0.6986, alpha = 0.05)
+
+```
+
+
+
+#Question 5
+a)	Perform a multivariate analysis combining each variable (Age, Diagnosis, Dukes Stage etc) with the cluster variable, i.e. each multivariate analysis will involve two variables, one of which is the cluster variable. Summarise/explain your results, including table/s.
+
+```{r}
+library("questionr")
+attach(crc_patients)
+
+# multivariate analysis
+#Location
+logitmodel_location<- glm(DFSEvent~cluster_assignments+Location, family = "binomial",)
+logitmodel_location
+summary(logitmodel_location)
+odds.ratio(logitmodel_location)
+
+# DukeStage
+logitmodel_duke <- glm(DFSEvent ~ cluster_assignments + DukesStage, family = "binomial")
+logitmodel_duke
+summary(logitmodel_duke)
+odds.ratio(logitmodel_duke)
+
+# Age at Diagnosis
+logitmodel_age <- glm(DFSEvent ~ cluster_assignments + AgeDiagnosis, family = "binomial")
+logitmodel_age
+summary(logitmodel_age)
+odds.ratio(logitmodel_age)
+
+# Gender
+logitmodel_gender <- glm(DFSEvent ~ cluster_assignments + Gender, family = "binomial")
+logitmodel_gender
+summary(logitmodel_gender)
+odds.ratio(logitmodel_gender)
+
+# Adjuvant Radiotherapy
+logitmodel_radio <- glm(DFSEvent ~ cluster_assignments + AdjRadio, family = "binomial")
+logitmodel_radio
+summary(logitmodel_radio)
+odds.ratio(logitmodel_radio)
+
+# Adjuvant Chemotherapy
+logitmodel_chem <- glm(DFSEvent ~ cluster_assignments + AdjChem, family = "binomial")
+logitmodel_chem
+summary(logitmodel_chem)
+odds.ratio(logitmodel_chem)
+
+
+
+```
+
+
+b)	Which of the models in 5a) is the ‘best’ at predicting patient survival? Explain your answer.
+
+
+
+```{r}
+install.packages("AICmodavg")
+library("AICcmodavg")
+
+```
+
+
+```{r}
+
+#define list of models
+models <- list(logitmodel_location, logitmodel_duke, logitmodel_age, logitmodel_gender, logitmodel_radio, logitmodel_chem)
+
+#specify model names
+mod.names <- c('location', 'duke', 'age', 'gender', 'radio', 'chemo')
+
+#calculate AIC of each model
+aictab(cand.set = models, modnames = mod.names)
+
+
+```
+
+
+```{r}
+
+install.packages("pscl")
+library("pscl")
+```
+
+
+```{r}
+#Location
+model_loc <- pR2(logitmodel_location)["McFadden"]
+
+cat("location mcfadden is", model_loc)
+
+# DukeStage
+model_duke <- pR2(logitmodel_duke)["McFadden"]
+
+cat("Duke mcfadden is", model_duke)
+
+
+# Age at Diagnosis
+model_age <- pR2(logitmodel_age)["McFadden"]
+
+cat("Age mcfadden is", model_age)
+
+
+# Gender
+model_gender <- pR2(logitmodel_gender)["McFadden"]
+
+cat("Gender mcfadden is", model_gender)
+
+
+# Adjuvant Radiotherapy
+model_radio <- pR2(logitmodel_radio)["McFadden"]
+
+cat("Radio mcfadden is", model_radio)
+
+
+
+# Adjuvant Chemotherapy
+model_chem <- pR2(logitmodel_chem)["McFadden"]
+
+cat("Chem mcfadden is", model_chem)
+
+
+```
+

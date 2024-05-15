@@ -1,0 +1,2 @@
+# Update Q1:
+DFS and median

@@ -1,0 +1,551 @@
+---
+title: "Assignment I"
+author: "Eman AlBahrani"
+date: "2024-02-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##Background:
+This dataset (AssignI_SS24.txt) consists of a group of colorectal cancer patients who have had surgery to remove their tumours. The dataset consists of the following variables:
+
+Age at Diagnosis (Years)
+Dukes Stage: A to D (development/progression of disease)
+Gender: Male or Female
+Location: Left, Right, Colon or Rectum
+DFS: Disease-free survival, months (survival without the disease returning)
+DFSevent: 0 or 1 (with 1 = event)
+AdjRadio: If the patient also received radiotherapy
+AdjChem: If the patient also received chemotherapy
+
+
+#Question 1:
+Summarise the composition of the data using a table and accompanying narrative
+(approximately one paragraph)
+
+
+```{r}
+
+#Load data
+crc_patients <- read.table("AssignI_SS24.txt", header=TRUE,
+row.names=1)
+
+crc_patients
+
+```
+
+
+```{r}
+#Summary Stats
+
+
+#sum
+dim(crc_patients)
+
+#Age
+print("Mean age at diagnosis is ")
+mean(crc_patients$AgeDiagnosis)
+print("Age at diagnosis SD is ")
+sd(crc_patients$AgeDiagnosis)
+print("unknown:")
+sum(is.na(crc_patients$AgeDiagnosis))
+
+#Gender
+print("Gender:")
+table(crc_patients$Gender)
+print("unknown:")
+sum(is.na(crc_patients$Gender))
+
+#Location
+print("Location:")
+table(crc_patients$Location)
+print("unknown:")
+sum(is.na(crc_patients$Location))
+
+#DukesStage
+print("DukesStage")
+table(crc_patients$DukesStage)
+print("unknown:")
+sum(is.na(crc_patients$DukesStage))
+
+
+#DFS
+print("Average disease-free survival in months is")
+mean(crc_patients$DFS, na.rm = TRUE)
+print("disease-free survival in months SD is ")
+sd(crc_patients$DFS, na.rm = TRUE)
+print("NA DFS values: ")
+sum(is.na(crc_patients$DFS))
+
+
+#DFS event where 1 = event
+print("DFS event where 1 = event and 0 = no event:")
+table(crc_patients$DFSEvent)
+print("unknown:")
+sum(is.na(crc_patients$DFSEvent))
+
+
+#AdjRadio
+print("AdjRadio where N = no and Y = yes:")
+table(crc_patients$AdjRadio)
+print("unknown:")
+sum(is.na(crc_patients$AdjRadio))
+
+#AdjChem
+print("AdjChem where N = no and Y = yes:")
+table(crc_patients$AdjChem)
+print("unknown:")
+sum(is.na(crc_patients$AdjChem))
+
+```
+
+
+#Question 2a:
+Is there a difference in patient age at diagnosis depending on tumour location?
+
+
+```{r}
+#load libraries
+install.packages("car")   #for the "leveneTest"
+library(car)
+library(ggplot2)
+```
+
+
+```{r}
+#explore data normality
+
+
+# Perform Shapiro-Wilk test for each tumor location group
+shapiro_test_results <- by(crc_patients$AgeDiagnosis, crc_patients$Location, shapiro.test)
+shapiro_test_results
+
+
+# Histograms
+library(ggplot2)
+ggplot(crc_patients, aes(x = AgeDiagnosis)) +
+  geom_histogram() +
+  facet_wrap(~Location, scales = "free")
+
+# Density plots
+ggplot(crc_patients, aes(x = AgeDiagnosis, fill = Location)) +
+  geom_density(alpha = 0.5)
+
+# Q-Q plots
+qqnorm(crc_patients$AgeDiagnosis)
+qqline(crc_patients$AgeDiagnosis)
+
+
+#explore heterogeneity of variance
+
+levene_test1 <- leveneTest(AgeDiagnosis ~ Location, data = crc_patients)
+levene_test1
+
+
+```
+
+
+colon > we fail to reject H0, normally distributed
+left > we reject H0, not normally distributed
+rectum > we fail to reject H0, normally distributed
+right > we reject H0, not normally distributed
+
+
+
+"In such cases where the normality assumption is not met for all groups, but the assumption of homogeneity of variances is satisfied, it's generally recommended to use a robust test that does not rely heavily on the normality assumption."
+
+so we'll use KW
+
+#hypthosis
+
+H0: There is no difference in patient age at diagnosis among different tumor locations.
+H1: There is a difference in patient age at diagnosis among different tumor locations.
+
+```{r}
+#Perform Kruskal-Wallis test
+kruskal.test(AgeDiagnosis ~ Location, data = crc_patients)
+
+
+```
+
+Kruskal-Wallis Test:
+
+The Kruskal-Wallis chi-squared statistic is 10.707 with 3 degrees of freedom.
+The p-value associated with the test is 0.01342.
+The null hypothesis of the Kruskal-Wallis test is that there is no difference in age at diagnosis among the different tumor locations.
+Since the p-value (0.01342) is less than the significance level (e.g., 0.05), we reject the null hypothesis.
+Therefore, we conclude that there are statistically significant differences in age at diagnosis among the different tumor locations.
+
+
+```{r}
+#check each location
+
+# Install package
+install.packages("dunn.test")
+
+# Load the dunn.test library
+library(dunn.test)
+
+# Perform pairwise comparisons using Dunn's test with Bonferroni correction
+dunn.test(crc_patients$AgeDiagnosis, g = crc_patients$Location, method = "bonferroni")
+
+```
+```{r}
+pairwise.wilcox.test(crc_patients$AgeDiagnosis, g = crc_patients$Location,
+                 p.adjust.method = "BH")
+```
+
+
+
+
+##Question 2b:
+Is there a difference in patient age at diagnosis between the different Dukes stages?
+
+```{r}
+
+#explore data normality
+
+
+# Perform Shapiro-Wilk test for each tumor location group
+shapiro_test_results <- by(crc_patients$AgeDiagnosis, crc_patients$DukesStage, shapiro.test)
+shapiro_test_results
+
+
+# Histograms
+ggplot(crc_patients, aes(x = AgeDiagnosis)) +
+  geom_histogram() +
+  facet_wrap(~crc_patients$DukesStage, scales = "free")
+
+# Density plots
+ggplot(crc_patients, aes(x = AgeDiagnosis, fill = crc_patients$DukesStage)) +
+  geom_density(alpha = 0.5)
+
+# Q-Q plots
+qqnorm(crc_patients$AgeDiagnosis)
+qqline(crc_patients$AgeDiagnosis)
+
+
+```
+
+```{r}
+
+#TRYYYY
+
+#Par(mfrow=c(number of rows by colomns i.e. 2,2))
+
+Par(mfrow=c(2,2))
+```
+
+
+stage A < we fail to reject H0, approximately normally distributed
+stage B < we reject H0, not normally distributed
+Stage C < we reject H0, not normally distributed
+Stage D < we fail to reject H0, approximately normally distributed
+
+```{r}
+#perfom levene test
+levene_test <- leveneTest(AgeDiagnosis ~ DukesStage, data = crc_patients)
+levene_test
+```
+ fail to reject H0, the variances are homogeneous across all Dukes stages.
+ 
+
+ 
+```{r}
+kruskal.test(AgeDiagnosis ~ DukesStage, data = crc_patients)
+
+
+```
+
+
+"Since the p-value (0.4848) is greater than the significance level (e.g., 0.05), we fail to reject the null hypothesis. Therefore, there is not enough evidence to suggest that there is a statistically significant difference in patient age at diagnosis among the different Dukes stages.
+
+These results suggest that the Dukes stage may not have a significant effect on patient age at diagnosis, based on the Kruskal-Wallis test."
+
+```{r}
+#check each stage
+
+# Perform pairwise comparisons using Dunn's test with Bonferroni correction
+dunn.test(crc_patients$AgeDiagnosis, g = crc_patients$DukesStage, method = "bonferroni")
+```
+
+
+
+##Question 3a:
+Are male patients more likely to be diagnosed with Dukes Stages C or D?
+
+The chi-squared test of independence is commonly used to examine the association between two categorical variables. 
+BUt we need to check assumptions.
+
+```{r}
+# Create a contingency table
+contingency_table <- table(crc_patients$Gender, crc_patients$DukesStage)
+
+# Check expected cell counts
+expected_counts <- chisq.test(contingency_table)$expected
+expected_counts
+
+# Check dataframe structure
+str(crc_patients)
+
+```
+
+All the expected cell counts are well above 5, which satisfies the assumption for performing a chi-squared test. Therefore, in this case, the sample size and expected cell counts assumption is met.
+Chi-square can be performed.
+
+```{r}
+
+# Perform chi-squared test
+chi_squared_test <- chisq.test(contingency_table)
+
+# Summarize the results
+chi_squared_test
+
+```
+
+Chi-squared statistic (X-squared): 3.843
+Degrees of freedom (df): 3
+p-value: 0.2789
+
+Since the p-value (0.2789) is greater than the significance level (0.05), we fail to reject the null hypothesis. Therefore, there is not enough evidence to suggest that there is a statistically significant association between gender and Dukes stages.
+
+These results indicate that male patients are not significantly more likely to be diagnosed with Dukes Stages C or D compared to female patients, based on the chi-squared test of independence.
+
+
+
+##Question 3b:
+Based on previous datasets, the dataset owners have suggested that “female patients are
+more likely to be older at diagnosis of colorectal cancer”. Is there a similar trend in this
+dataset?
+
+We need to check if there's a difference between women's age and men's age at diagnosis.
+We need a hypothesis test.
+This could be a t-test or Wilcoxon rank-sum test (Mann-Whitney U test), depending on the data's distribution.
+
+```{r}
+
+# Subset data for male and female patients
+male_age <- crc_patients$AgeDiagnosis[crc_patients$Gender == "M"]
+female_age <- crc_patients$AgeDiagnosis[crc_patients$Gender == "F"]
+
+
+## Check the distribution of the data
+
+# Histogram for age at diagnosis
+hist(crc_patients$AgeDiagnosis, main = "Histogram of Age at Diagnosis", xlab = "Age")
+
+
+# Density plot for age at diagnosis
+plot(density(crc_patients$AgeDiagnosis), main = "Density Plot of Age at Diagnosis", xlab = "Age")
+
+
+# Box plot for age at diagnosis by gender
+boxplot(AgeDiagnosis ~ Gender, data = crc_patients, main = "Box Plot of Age at Diagnosis by Gender", xlab = "Gender", ylab = "Age")
+
+shapiro.test(crc_patients$AgeDiagnosis)
+
+
+```
+
+A p-value of 0.0002941 obtained from the Shapiro-Wilk test indicates that the null hypothesis of normality is rejected at the significance level of 0.05. There is significant evidence to suggest that the data does not follow a normal distribution.
+
+Therefore, based on the Shapiro-Wilk test results, we conclude that the assumption of normality is violated for the age at diagnosis so the data may not be normally distributed.
+
+When the assumption of normality is violated, it's advisable to use non-parametric tests, such as the Wilcoxon rank-sum test (Mann-Whitney U test), instead of parametric tests like the t-test, to compare the distribution of age at diagnosis between male and female patients.
+
+```{r}
+
+
+# Perform Wilcoxon rank-sum test
+wilcox_test <- wilcox.test(male_age, female_age)
+
+# Print the test results
+wilcox_test
+
+```
+
+As the p-value (0.0114) is less than the significant level (0.05), we reject the null hypothesis. This is sufficient evidence to conlude that there is statistically significant difference in the distibution of age at diagnosis between male and female patients. 
+The alternative hypothesis, "true location shift is not equal to 0," suggeststhat female patients are more likely to be older at diagnosis of colorectal cancer, as indicated by the statistically significant difference in age at diagnosis between male and female patients.
+
+
+
+## Question 3c:
+Does age at diagnosis differ between genders within each Duke's Stage?
+
+
+To compare the distribution of a continuous variable (age at diagnosis in this case) between two independent groups (male and female patients in this case), two-sample t-test or Mann-Whitney U tests are appropriate depending on the normality of the data.
+```{r}
+# List of Dukes stages
+dukes_stages <- unique(crc_patients$DukesStage)
+
+# Perform Shapiro-Wilk test for each Dukes stage and gender combination
+for (stage in dukes_stages) {
+  # Subset data for the current Dukes stage
+  stage_data <- subset(crc_patients, DukesStage == stage)
+  
+  # Perform Shapiro-Wilk test for male patients
+  shapiro_male <- shapiro.test(stage_data$AgeDiagnosis[stage_data$Gender == "M"])
+  
+  # Perform Shapiro-Wilk test for female patients
+  shapiro_female <- shapiro.test(stage_data$AgeDiagnosis[stage_data$Gender == "F"])
+  
+  # Print the test results
+  cat("Dukes Stage:", stage, "\n")
+  cat("Shapiro-Wilk test for male patients:\n")
+  print(shapiro_male)
+  cat("Shapiro-Wilk test for female patients:\n")
+  print(shapiro_female)
+}
+
+```
+
+For Dukes Stage A:
+
+Male patients: Shapiro-Wilk test p-value = 0.6381 (p > 0.05), suggesting that the data is normally distributed.
+Female patients: Shapiro-Wilk test p-value = 0.8916 (p > 0.05), suggesting that the data is normally distributed.
+For Dukes Stage B:
+
+Male patients: Shapiro-Wilk test p-value = 0.06466 (p < 0.05), suggesting that the data is not normally distributed.
+Female patients: Shapiro-Wilk test p-value = 0.1822 (p > 0.05), suggesting that the data is normally distributed.
+For Dukes Stage C:
+
+Male patients: Shapiro-Wilk test p-value = 0.05895 (p < 0.05), suggesting that the data is not normally distributed.
+Female patients: Shapiro-Wilk test p-value = 0.1375 (p > 0.05), suggesting that the data is normally distributed.
+For Dukes Stage D:
+
+Male patients: Shapiro-Wilk test p-value = 0.6581 (p > 0.05), suggesting that the data is normally distributed.
+Female patients: Shapiro-Wilk test p-value = 0.1611 (p > 0.05), suggesting that the data is normally distributed.
+
+As not all subgroups are normally distributed, it is more reliable to use a non parametric test, i.e. Mann Whitney U test.
+
+```{r}
+
+# List of Dukes stages
+dukes_stages <- unique(crc_patients$DukesStage)
+
+# Perform Wilcoxon rank-sum test for each Dukes stage
+for (stage in dukes_stages) {
+  # Subset data for the current Dukes stage
+  stage_data <- subset(crc_patients, DukesStage == stage)
+  
+  # Perform Wilcoxon rank-sum test
+  wilcox_test_result <- wilcox.test(AgeDiagnosis ~ Gender, data = stage_data)
+  
+  # Print the test results
+  cat("Dukes Stage:", stage, "\n")
+  print(wilcox_test_result)
+}
+
+```
+
+Dukes Stage A: Wilcoxon W = 249, p-value = 0.7942
+Dukes Stage B: Wilcoxon W = 1135.5, p-value = 0.8056
+Dukes Stage C: Wilcoxon W = 1373.5, p-value = 0.006139
+Dukes Stage D: Wilcoxon W = 533, p-value = 0.05961
+
+For Dukes Stage A and B, the p-values are greater than 0.05, indicating that there is no significant difference in age at diagnosis between male and female patients within these stages.
+
+For Dukes Stage C, the p-value is less than 0.05 (p = 0.006139), suggesting that there is a statistically significant difference in age at diagnosis between male and female patients within this stage.
+
+For Dukes Stage D, the p-value is close to 0.05 (p = 0.05961), indicating a borderline significance. Further investigation may be warranted to determine if there is a meaningful difference.
+
+Overall, the Wilcoxon rank sum test results suggest that there may be differences in age at diagnosis between male and female patients within certain Dukes stages, particularly in Stage C. 
+
+*However, it's essential to consider the context of the analysis and the limitations associated with approximate p-values due to tied values.
+
+
+##Question 4:
+Again, based on previous datasets, the dataset owners have suggested that “there is an
+association/relationship between a patient’s Duke's staging and whether they received
+chemotherapy”. Is the same trend found in this dataset?
+
+
+
+The chi-square test of independence is commonly used when you have two categorical variables and you want to assess whether there is a relationship between them, duke's staging and chemotherapy. 
+
+
+H0: There is no association between the two categorical variables.
+H1: There is an association between the two categorical variables. 
+```{r}
+
+# Create a contingency table for Duke's staging and chemotherapy
+contingency_table <- table(crc_patients$DukesStage, crc_patients$AdjChem)
+
+# Check for the assumption of expected cell frequencies
+print("Checking assumption of expected cell frequencies:")
+print(chisq.test(contingency_table)$expected)
+
+# As none of the cells are less than 5, we will use Fisher's test
+
+fishers_result <- fisher.test(contingency_table)
+
+# Print the test result
+print(fishers_result)
+
+
+```
+
+
+The expected cell frequencies in each cell are not too small, which could affect the validity of the chi-square test.
+
+ The chi-square test for independence is conducted to assess whether there is a significant association between Duke's staging and chemotherapy. The test statistic (X-squared) is calculated to be 68.125 with 3 degrees of freedom, and the p-value is very small (p < 0.001). This indicates that there is a significant association between Duke's staging and chemotherapy.
+
+The chi-square test result confirms the findings from the previous test. It shows a significant chi-square statistic of 68.125 with 3 degrees of freedom and a very small p-value (p < 0.001), further supporting the presence of an association between Duke's staging and chemotherapy.
+
+Based on these results, we can conclude that there is a significant association between a patient's Duke's staging and whether they received chemotherapy in the dataset.
+
+
+
+## Question 5a:
+What is the median disease-free survival of patients with a) Dukes Stage A, b) Dukes Stage B
+and c) Dukes Stage C? Provide 95% Confidence Intervals with your answers.
+
+
+```{r}
+crc_patients1 <- crc_patients
+attach(crc_patients1)
+crc_patients1
+
+```
+
+
+```{r}
+fit1<-survfit(Surv(DFS, DFSEvent)~DukesStage, data=crc_patients1)
+summary(fit1)$table
+```
+             median 0.95LCL 0.95UCL
+DukesStage=A   56.5    44.2   67.19
+DukesStage=B   44.8    38.0   52.14
+DukesStage=C   54.9    47.8   64.33
+
+
+```{r}
+library(survminer)
+
+ggsurvplot(fit1,pval=T, conf.int = TRUE, 
+           risk.table = T, risk.table.col = "strata",
+           linetype= "strata",
+           surv.median.line = "hv",
+           ggtheme = theme_bw())
+```
+
+
+
+## Question 5b:
+Is there an association/relationship between a patient’s Duke's staging and disease-free
+survival?
+
+For Question 5b, use a non-parametric statistical test.
+
+
+```{r}
+
+
+surv_diff <- survdiff(Surv(DFS, DFSEvent)~DukesStage, data=crc_patients1)
+surv_diff
+```
+
