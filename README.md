@@ -22,7 +22,7 @@ The dataset (`AssignI_SS24.txt`) comprises colorectal cancer patients who underw
 - AdjChem: If the patient received chemotherapy
 
 ## Analysis
-## Question 1: Data Summary
+### Question 1: Data Summary
 
 The dataset summary is as follows:
 
@@ -36,60 +36,60 @@ The dataset summary is as follows:
 - Standard deviation of disease-free survival: [SD DFS]
 - Number of missing values for each variable: [Missing Values]
 
-## Question 2a: Age at Diagnosis vs. Tumour Location
+### Question 2a: Age at Diagnosis vs. Tumour Location
 
 - We performed the Kruskal-Wallis test and found a significant difference in age at diagnosis among tumor locations (p-value = [P-value]).
 - Pairwise comparisons using Dunn's test revealed [Dunn's Test Results].
   
-## Question 2b: Age at Diagnosis vs. Dukes Stages
+### Question 2b: Age at Diagnosis vs. Dukes Stages
 
 - The Kruskal-Wallis test showed no significant difference in age at diagnosis among different Dukes stages (p-value = [P-value]).
 - Pairwise comparisons indicated [Pairwise Comparison Results].
 
-## Question 3a: Gender vs. Dukes Stages
+### Question 3a: Gender vs. Dukes Stages
 
 - Chi-squared test results indicated no significant association between gender and Dukes stages (p-value = [P-value]).
   
-## Question 3b: Age at Diagnosis by Gender
+### Question 3b: Age at Diagnosis by Gender
 
 - The Wilcoxon rank-sum test showed a significant difference in age at diagnosis between male and female patients (p-value = [P-value]).
 
-## Question 3c: Age at Diagnosis by Gender within Dukes Stages
+### Question 3c: Age at Diagnosis by Gender within Dukes Stages
 
 - Wilcoxon rank-sum tests suggested differences in age at diagnosis between genders within certain Dukes stages.
 
-## Question 4: Duke's Staging vs. Chemotherapy
+### Question 4: Duke's Staging vs. Chemotherapy
 
 - Fisher's exact test confirmed a significant association between Duke's staging and chemotherapy (p-value < 0.001).
 
-## Question 5a: Disease-Free Survival by Dukes Stages
+### Question 5a: Disease-Free Survival by Dukes Stages
 
 - Median disease-free survival:
   - Dukes Stage A: 56.5 months (95% CI: 44.2 - 67.19)
   - Dukes Stage B: 44.8 months (95% CI: 38.0 - 52.14)
   - Dukes Stage C: 54.9 months (95% CI: 47.8 - 64.33)
 
-## Question 5b: Association between Duke's Staging and Disease-Free Survival
+### Question 5b: Association between Duke's Staging and Disease-Free Survival
 
 - The log-rank test showed a significant association between Duke's staging and disease-free survival (p-value = [P-value]).
 
-## Question 6:
+### Question 6:
 - Selecting genes based on the interquartile range (IQR) of their expression levels.
 - Performing hierarchical clustering using the Euclidean distance and Ward linkage method.
 - Plotting the dendrogram and dividing the dataset into two clusters.
 
-## Question 7:
+### Question 7:
 - Investigating relationships between non-survival variables (e.g., location, Dukes stage, age, gender, adjuvant treatments) and the two clusters identified in Question 6.
 
-## Question 8:
+### Question 8:
 - Plotting survival curves corresponding to the two clusters.
 - Summarising and explaining the results.
 
-## Question 9:
+### Question 9:
 - Performing univariate analysis for each clinical variable with respect to disease-free survival.
 - Calculating the power of each univariate test.
 
-## Question 10:
+### Question 10:
 - Performing multivariate analysis combining each clinical variable with the cluster variable.
 - Determining the best model for predicting patient survival based on AIC and McFadden pseudo-R-squared values.
 
