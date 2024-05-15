@@ -73,23 +73,23 @@ The dataset summary is as follows:
 
 - The log-rank test showed a significant association between Duke's staging and disease-free survival (p-value = [P-value]).
 
-### Question 6:
+## Question 6:
 - Selecting genes based on the interquartile range (IQR) of their expression levels.
 - Performing hierarchical clustering using the Euclidean distance and Ward linkage method.
 - Plotting the dendrogram and dividing the dataset into two clusters.
 
-### Question 7:
+## Question 7:
 - Investigating relationships between non-survival variables (e.g., location, Dukes stage, age, gender, adjuvant treatments) and the two clusters identified in Question 6.
 
-### Question 8:
+## Question 8:
 - Plotting survival curves corresponding to the two clusters.
 - Summarising and explaining the results.
 
-### Question 9:
+## Question 9:
 - Performing univariate analysis for each clinical variable with respect to disease-free survival.
 - Calculating the power of each univariate test.
 
-### Question 10:
+## Question 10:
 - Performing multivariate analysis combining each clinical variable with the cluster variable.
 - Determining the best model for predicting patient survival based on AIC and McFadden pseudo-R-squared values.
 
